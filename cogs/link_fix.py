@@ -134,10 +134,16 @@ async def send_fixed_links(fixed_links: list[str], guild: Guild, original_messag
         messages[-1] += f"\n{line}"
 
     if guild.reply:
-        await discore.fallback_reply(original_message, messages.pop(0))
+        await discore.fallback_reply(original_message, 
+                                        messages.pop(0),
+                                        #silent = guild.silent   #whether to reply the message silently
+                                        )
 
     for message in messages:
-        await original_message.channel.send(message)
+        await original_message.channel.send(message,
+                                            allowed_mentions=discord.AllowedMentions.none(),
+                                            #silent = guild.silent    #whether to send the message silently
+                                            )
 
 
 async def edit_original_message(guild: Guild, message: discore.Message, permissions: discore.Permissions) -> None:

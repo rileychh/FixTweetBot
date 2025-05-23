@@ -71,7 +71,8 @@ class Guild(Model):
         'bluesky_view': BlueskyView,
         'default_channel_state': 'bool',
         'default_member_state': 'bool',
-        'default_role_state': 'bool',
+        'default_role_state': 'bool'
+        #'silent' : 'bool'  #Add in Database,
     }
 
     @has_many('id', 'guild_id')
