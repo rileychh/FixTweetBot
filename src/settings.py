@@ -1540,7 +1540,6 @@ class WebsiteSettings(BaseSetting):
         await self.view.refresh(interaction)
 
 
-########################################### Derrick 
 class SilentModeSetting(BaseSetting):
     """
     Represents the silent mode setting for fixed links at the guild level.
@@ -1601,10 +1600,6 @@ class SilentModeSetting(BaseSetting):
         )
 
 
-############################################ Derrick
-
-
-
 class SettingsView(discore.ui.View):
 
     def __init__(
@@ -1629,9 +1624,7 @@ class SettingsView(discore.ui.View):
             OriginalMessageBehaviorSetting(i, self, channel),
             ReplyMethodSetting(i, self, channel),
             WebhooksSetting(i, self, channel),
-            ############# Derrick
             SilentModeSetting(i, self, channel),
-            #############
         ))
         if self.member == self.bot.user:
             self.settings['clicker'] = ClickerSetting(i, self)
