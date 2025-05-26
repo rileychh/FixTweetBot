@@ -588,7 +588,7 @@ class OriginalMessageBehaviorSetting(BaseSetting):
 
 class ReplyMethodSetting(BaseSetting):
     """
-    Represents the reply method setting (reply, or send)
+    Represents the reply method setting (reply, or send), with an additional mute toggle
     """
 
     name = 'settings.reply_method.name'
@@ -600,7 +600,8 @@ class ReplyMethodSetting(BaseSetting):
         db_guild = Guild.find_or_create(channel.guild.id)
         self.db_guild = db_guild
         self.channel = channel
-        self.state = bool(db_guild.reply)
+        self.state = bool(db_guild.reply)   # 回覆訊息
+        self.silent = bool(db_guild.silent) # 靜音發送
         super().__init__(interaction, view)
 
     @property
@@ -614,13 +615,22 @@ class ReplyMethodSetting(BaseSetting):
             perms.append('send_messages_in_threads')
         if self.state:
             perms.append('read_message_history')
+
         embed = discore.Embed(
             title=f"{self.emoji} {t(self.name)}",
             description=t(
                 'settings.reply_method.content',
                 state=t(f'settings.reply_method.state.{str(self.state).lower()}', emoji=self.emoji),
-                perms=format_perms(perms, self.channel))
+                perms=format_perms(perms, self.channel)
+            )
         )
+
+        embed.add_field(
+            name=t('settings.reply_method.silent_label'),
+            value=t(f'settings.reply_method.silent_state.{str(self.silent).lower()}'),
+            inline=False
+        )
+
         discore.set_embed_footer(self.bot, embed)
         return embed
 
@@ -636,18 +646,33 @@ class ReplyMethodSetting(BaseSetting):
 
     @property
     async def items(self) -> List[discore.ui.Item]:
-        item = discore.ui.Button(
+        reply_button = discore.ui.Button(
             style=discore.ButtonStyle.primary if self.state else discore.ButtonStyle.secondary,
             label=t(f'settings.reply_method.button.{str(self.state).lower()}'),
             custom_id=self.id
         )
-        edit_callback(item, self.view, self.action)
-        return [item]
+        edit_callback(reply_button, self.view, self.action)
+
+        silent_button = discore.ui.Button(
+            style=discore.ButtonStyle.success if self.silent else discore.ButtonStyle.secondary,
+            label=t(f'settings.reply_method.silent_button.{str(self.silent).lower()}'),
+            custom_id=f"{self.id}_silent"
+        )
+        edit_callback(silent_button, self.view, self.toggle_silent)
+
+        return [reply_button, silent_button]
 
     async def action(self, view: SettingsView, interaction: discore.Interaction, _) -> None:
         self.state = not self.state
         self.db_guild.update({'reply': self.state})
         await view.refresh(interaction)
+
+    async def toggle_silent(self, view: SettingsView, interaction: discore.Interaction, _) -> None:
+        self.silent = not self.silent
+        self.db_guild.update({'silent': self.silent})
+        await view.refresh(interaction)
+
+
 
 
 class WebhooksSetting(BaseSetting):
@@ -1672,3 +1697,5 @@ class SettingsView(discore.ui.View):
         await self.reset_timeout(interaction)
 
     send = refresh
+
+
