@@ -8,7 +8,7 @@ class AddSilent(Migration):
         Run the migrations.
         """
         with self.schema.table("guilds") as table:
-            table.boolean("silent").default(False)
+            table.boolean("silent").default(True)
 
     def down(self):
         """
