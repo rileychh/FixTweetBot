@@ -1540,6 +1540,71 @@ class WebsiteSettings(BaseSetting):
         await self.view.refresh(interaction)
 
 
+########################################### Derrick 
+class SilentModeSetting(BaseSetting):
+    """
+    Represents the silent mode setting for fixed links at the guild level.
+    """
+
+    name = "Silent Mode"
+    id = "silent_mode"
+    description = "控制是否在修正連結時使用靜音訊息。"
+    emoji = "🔕"
+
+    def __init__(
+            self,
+            interaction: discore.Interaction,
+            view: SettingsView,
+            channel: discore.TextChannel | discore.Thread
+    ):
+        self.guild = channel.guild
+        self.db_guild = Guild.find_or_create(self.guild.id)
+        self.state = self.db_guild.silent  # 從 Guild 讀取 silent
+        super().__init__(interaction, view)
+
+    @property
+    async def embed(self) -> discore.Embed:
+        embed = discore.Embed(
+            title=f"{self.emoji} {self.name}",
+            description="當開啟時，機器人回覆修正連結時會使用靜音訊息，不會通知其他人。"
+        )
+        embed.add_field(
+            name="目前狀態",
+            value="✅ 已啟用" if self.state else "❌ 已停用",
+            inline=False
+        )
+        discore.set_embed_footer(self.bot, embed)
+        return embed
+
+    @property
+    async def items(self) -> list[discore.ui.Item]:
+        toggle_button = discore.ui.Button(
+            style=discore.ButtonStyle.primary if self.state else discore.ButtonStyle.secondary,
+            label="切換 Silent Mode",
+            custom_id=self.id
+        )
+        edit_callback(toggle_button, self.view, self.toggle)
+        return [toggle_button]
+
+    async def toggle(self, view: SettingsView, interaction: discore.Interaction, _) -> None:
+        self.state = not self.state
+        self.db_guild.update({'silent': self.state})  # 更新 Guild 的 silent
+        await view.refresh(interaction)
+
+    @property
+    async def option(self) -> discore.SelectOption:
+        return discore.SelectOption(
+            label=('🟢 ' if self.state else '🔴 ') + self.name,
+            value=self.id,
+            description=self.description,
+            emoji=self.emoji
+        )
+
+
+############################################ Derrick
+
+
+
 class SettingsView(discore.ui.View):
 
     def __init__(
@@ -1564,6 +1629,9 @@ class SettingsView(discore.ui.View):
             OriginalMessageBehaviorSetting(i, self, channel),
             ReplyMethodSetting(i, self, channel),
             WebhooksSetting(i, self, channel),
+            ############# Derrick
+            SilentModeSetting(i, self, channel),
+            #############
         ))
         if self.member == self.bot.user:
             self.settings['clicker'] = ClickerSetting(i, self)
@@ -1672,3 +1740,5 @@ class SettingsView(discore.ui.View):
         await self.reset_timeout(interaction)
 
     send = refresh
+
+
